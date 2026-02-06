@@ -8,6 +8,46 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 // REGISTER
+export const signup= async (req, res)=> {
+  
+  const {firstname, lastname, email, password} = req.body;
+
+  if (!firstname || !lastname || !email || !password) {
+    return res.status(400).json({
+      message: "All fields (firstname, lastname, email, password) are required"
+    });
+  }
+
+  const nameRegex = /^[A-Za-z]+$/;
+
+  if (!nameRegex.test(firstname)) {
+    return res.status(400).json({ message: "Firstname can contain only letters" });
+  }
+  if (!nameRegex.test(lastname)) {
+    return res.status(400).json({ message: "Lastname can contain only letters" });
+  }
+
+  const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ message: "Invalid email format" });
+  }
+
+  if (password.length < 8) {
+    return res.status(400).json({
+      message: "Password must be at least 8 characters long"
+    });
+  }
+
+  if (!/(?=.*[A-Za-z])(?=.*\d)/.test(password)) {
+    return res.status(400).json({ message: "Password must contain letters and numbers" });
+  }
+
+  try{
+    
+    const exists =await User.findOne({ email });
+    if (exists) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
 export const signup = asyncHandler(async (req, res) => {
   const { firstname, lastname, email, password } = req.body;
 
@@ -34,10 +74,23 @@ export const signup = asyncHandler(async (req, res) => {
 export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await User.findOne({ email });
-  if (!user) {
-    throw new ApiError(404, "User not found");
+  if (!email || !password) {
+    return res.status(400).json({
+      message: "email and password are required"
+    });
   }
+
+  const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ message: "Invalid email format" });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
@@ -58,9 +111,32 @@ export const login = asyncHandler(async (req, res) => {
         firstname: user.firstname,
         email: user.email
       }
-    }, "Login successful")
-  );
-});
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Login failed" });
+  }
+};
+
+export const sendCode = async(req,res)=>{
+  const {email}= req.body;
+  console.log("1. Received email:", email);
+
+  if (!email) {
+    return res.status(400).json({ message: "email is required" });
+  }
+
+  const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ message: "Invalid email format" });
+  }
+
+  try{
+    const user= await User.findOne({email});
+    console.log("2. User found:", user);
+    if(!user){
+      return res.status(404).json({message:"User not found"});
+    }
 
 export const sendCode = asyncHandler(async (req, res) => {
   const { email } = req.body;
@@ -69,6 +145,36 @@ export const sendCode = asyncHandler(async (req, res) => {
   if (!user) {
     throw new ApiError(404, "User not found");
   }
+};
+
+export const verifyCode= async(req, res)=>{
+  const {email, code}= req.body;
+
+  if (!email || !code) {
+    return res.status(400).json({ message: "email and code are required" });
+  }
+
+  const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ message: "Invalid email format" });
+  }
+
+  try{
+    const user= await User.findOne({email});
+    if(!user){
+      return res.status(404).json(
+        {
+          message: "User not found"
+        });
+    }
+    if(user.code !== code){
+      return res.status(400).json(
+        { 
+          message: "Invalid verification code"
+        }
+      );
+    }
 
   const code = Math.floor(1000 + Math.random() * 9000).toString(); // 4 Digit OTP
   const expiry = Date.now() + 1 * 60 * 1000; // 1 minute
@@ -119,10 +225,21 @@ export const verifyCode = asyncHandler(async (req, res) => {
     { expiresIn: "1d" }
   );
 
-  // Clear Verification Code
-  user.code = null;
-  user.codeExpiry = null;
-  await user.save();
+  if (!email) {
+    return res.status(400).json({ message: "email is required" });
+  }
+
+  const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ message: "Invalid email format" });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
   return res.status(200).json(
     new ApiResponse(200, { token }, "Login successful")
