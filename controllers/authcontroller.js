@@ -9,6 +9,36 @@ export const signup= async (req, res)=> {
   
   const {firstname, lastname, email, password} = req.body;
 
+  if (!firstname || !lastname || !email || !password) {
+    return res.status(400).json({
+      message: "All fields (firstname, lastname, email, password) are required"
+    });
+  }
+
+  const nameRegex = /^[A-Za-z]+$/;
+
+  if (!nameRegex.test(firstname)) {
+    return res.status(400).json({ message: "Firstname can contain only letters" });
+  }
+  if (!nameRegex.test(lastname)) {
+    return res.status(400).json({ message: "Lastname can contain only letters" });
+  }
+
+  const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ message: "Invalid email format" });
+  }
+
+  if (password.length < 8) {
+    return res.status(400).json({
+      message: "Password must be at least 8 characters long"
+    });
+  }
+
+  if (!/(?=.*[A-Za-z])(?=.*\d)/.test(password)) {
+    return res.status(400).json({ message: "Password must contain letters and numbers" });
+  }
+
   try{
     
     const exists =await User.findOne({ email });
@@ -39,6 +69,18 @@ export const signup= async (req, res)=> {
 // LOGIN
 export const login = async (req, res) => {
   const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({
+      message: "email and password are required"
+    });
+  }
+
+  const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ message: "Invalid email format" });
+  }
 
   try {
     const user = await User.findOne({ email });
@@ -73,6 +115,17 @@ export const login = async (req, res) => {
 export const sendCode = async(req,res)=>{
   const {email}= req.body;
   console.log("1. Received email:", email);
+
+  if (!email) {
+    return res.status(400).json({ message: "email is required" });
+  }
+
+  const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ message: "Invalid email format" });
+  }
+
   try{
     const user= await User.findOne({email});
     console.log("2. User found:", user);
@@ -112,6 +165,16 @@ export const sendCode = async(req,res)=>{
 
 export const verifyCode= async(req, res)=>{
   const {email, code}= req.body;
+
+  if (!email || !code) {
+    return res.status(400).json({ message: "email and code are required" });
+  }
+
+  const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ message: "Invalid email format" });
+  }
 
   try{
     const user= await User.findOne({email});
@@ -168,6 +231,16 @@ export const verifyCode= async(req, res)=>{
 
 export const resendCode = async (req, res) => {
   const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: "email is required" });
+  }
+
+  const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ message: "Invalid email format" });
+  }
 
   try {
     const user = await User.findOne({ email });
