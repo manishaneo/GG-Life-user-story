@@ -1,10 +1,11 @@
 import jwt from "jsonwebtoken";
+import { ApiError } from "../utils/ApiError.js";
 
 const authmiddleware = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
-    return res.status(401).json({ message: "No token provided" });
+    throw new ApiError(401, "No token provided");
   }
 
   const token = authHeader.split(" ")[1];
@@ -14,7 +15,7 @@ const authmiddleware = (req, res, next) => {
     req.userId = decoded.userId;
     next();
   } catch (err) {
-    return res.status(401).json({ message: "Invalid token" });
+    throw new ApiError(401, "Invalid token");
   }
 };
 
