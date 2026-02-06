@@ -82,6 +82,19 @@ export default function Login() {
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
+        
+<div className="mt-6 text-center">
+  <p className="text-sm text-gray-600">
+    Not registered?
+  </p>
+  <button
+    type="button"
+    onClick={() => navigate("/")}
+    className="mt-2 w-full border border-green-600 text-green-600 py-3 rounded-lg font-semibold hover:bg-green-50 transition"
+  >
+    Create Account
+  </button>
+</div>
       </div>
     </div>
   );
